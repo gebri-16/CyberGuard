@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- Scanlines overlay -->
+  <div class="scanlines"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="shield-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.25C17.25 23.15 21 18.25 21 13V7l-9-5z"/>
+          <path d="M9 12l2 2 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sys-tag">// SYS:ACTIVE &nbsp;|&nbsp; IndoBERT</div>
+        <h1>CYBER<span>GUARD</span></h1>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-text" id="status-text">ONLINE</span>
+    </div>
+  </header>
+
+  <!-- Cat Legend -->
+  <div class="cat-legend">
+    <div class="cat-item abusive"><span class="cat-dot"></span>Abusive</div>
+    <div class="cat-item hate"><span class="cat-dot"></span>Hate Speech</div>
+    <div class="cat-item harassment"><span class="cat-dot"></span>Harassment</div>
+    <div class="cat-item normal"><span class="cat-dot"></span>Normal</div>
+  </div>
+
+  <!-- Input Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-label"><span class="blink-dot"></span>INPUT_STREAM</div>
+      <span class="char-count" id="char-count">0 / 500</span>
+    </div>
+    <textarea id="text-input"
+      placeholder="// Masukkan teks untuk dianalisis...&#10;// Ctrl+Enter untuk deteksi cepat"
+      maxlength="500"></textarea>
+    <div class="card-footer">
+      <span class="shortcut-hint">⌃ Enter</span>
+      <button id="detect-btn">
+        <div class="spinner"></div>
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <span class="btn-text">ANALISIS</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Box -->
+  <div id="error-box">
+    <span class="err-icon">⚠</span>
+    <span id="error-msg"></span>
+  </div>
+
+  <!-- Scanning Card -->
+  <div class="card" id="scan-card" style="display:none">
+    <div class="card-label"><span class="blink-dot"></span>SCANNING...</div>
+    <div class="scan-bar-wrap">
+      <div class="scan-bar" id="scan-bar"></div>
+      <div class="scan-glow" id="scan-glow"></div>
+    </div>
+    <div class="scan-steps">
+      <div class="scan-step" id="step-1">[ ] Tokenisasi teks...</div>
+      <div class="scan-step" id="step-2">[ ] Menjalankan IndoBERT...</div>
+      <div class="scan-step" id="step-3">[ ] Menghitung probabilitas...</div>
+      <div class="scan-step" id="step-4">[ ] Menyusun hasil...</div>
+    </div>
+  </div>
+
+  <!-- Result Card -->
+  <div class="card result-card" id="result-card" style="display:none">
+    <div class="card-label"><span class="blink-dot"></span>DETECTION_RESULT</div>
+    <div class="result-main">
+      <div class="result-left">
+        <div class="result-icon" id="result-icon"></div>
+        <div>
+          <div class="result-badge" id="result-badge"></div>
+          <div class="result-label" id="result-label"></div>
+          <div class="result-desc"  id="result-desc"></div>
+        </div>
+      </div>
+      <div class="result-right">
+        <div class="confidence-ring">
+          <svg viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="6"/>
+            <circle cx="40" cy="40" r="34" fill="none" stroke-width="6"
+              stroke-linecap="round"
+              stroke-dasharray="213.6"
+              stroke-dashoffset="213.6"
+              id="conf-ring"
+              transform="rotate(-90 40 40)"/>
+          </svg>
+          <div class="conf-inner">
+            <div class="conf-pct" id="conf-pct">0%</div>
+            <div class="conf-lbl">conf</div>
+          </div>
+        </div>
+        <div class="model-tag" id="model-tag"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="prob-title">Distribusi Probabilitas</div>
+    <div id="prob-bars"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <span class="footer-tag">CYBERGUARD</span> &mdash; IndoBERT + SVM
+    <a class="open-web" id="open-web" href="#" title="Buka Web Utama">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+      Web
+    </a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
