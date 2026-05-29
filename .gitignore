@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.env
+.ipynb_checkpoints/
+
+# Virtual environment
+venv311/
+
+# Large files / Model weights
+model/saved/*
+dataset/raw/*
+dataset/processed/*
+app/uploads/*
