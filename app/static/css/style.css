@@ -558,3 +558,51 @@ footer {
   .tab-btn span { display: none; }
   h1 { font-size: 28px; }
 }
+/* ══════════════════════════════════════════
+   SCANNING ANIMATION (tambahkan di bawah style.css)
+   ══════════════════════════════════════════ */
+
+/* Progress bar scanning */
+.scan-bar-wrap {
+  position: relative; height: 4px;
+  background: var(--border); border-radius: 4px;
+  overflow: visible; margin-bottom: 16px;
+}
+
+.scan-bar {
+  height: 100%; background: var(--green);
+  border-radius: 4px; width: 0%;
+  transition: width 0.35s ease;
+  box-shadow: 0 0 8px var(--green);
+}
+
+.scan-glow {
+  position: absolute; top: -3px;
+  height: 10px; width: 0%;
+  background: radial-gradient(circle, rgba(0,255,136,0.6), transparent);
+  border-radius: 50%;
+  transition: width 0.35s ease;
+  pointer-events: none;
+}
+
+/* Step list */
+.scan-steps {
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.scan-step {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  transition: color 0.2s;
+  letter-spacing: 0.03em;
+}
+
+.scan-step.active {
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(0,255,136,0.4);
+}
+
+.scan-step.done {
+  color: var(--text-muted);
+}

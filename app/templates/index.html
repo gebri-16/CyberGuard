@@ -59,12 +59,9 @@
     </button>
   </nav>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 1: SINGLE TEXT                    -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 1: SINGLE TEXT -->
   <div id="tab-single" class="tab-content active">
 
-    <!-- Category legend -->
     <div class="cat-legend">
       <div class="cat-item abusive"><span class="cat-dot"></span>Abusive</div>
       <div class="cat-item hate"><span class="cat-dot"></span>Hate Speech</div>
@@ -74,10 +71,7 @@
 
     <div class="card">
       <div class="card-header">
-        <div class="card-label">
-          <span class="blink-dot"></span>
-          INPUT_STREAM
-        </div>
+        <div class="card-label"><span class="blink-dot"></span>INPUT_STREAM</div>
         <span class="char-count" id="char-count">0 / 1000</span>
       </div>
       <textarea id="text-input"
@@ -95,6 +89,21 @@
 
     <div id="error-box"></div>
     <div id="warning-box"></div>
+
+    <!-- ✅ SCANNING ANIMATION CARD -->
+    <div class="card" id="scan-card" style="display:none">
+      <div class="card-label"><span class="blink-dot"></span>SCANNING...</div>
+      <div class="scan-bar-wrap">
+        <div class="scan-bar" id="scan-bar"></div>
+        <div class="scan-glow" id="scan-glow"></div>
+      </div>
+      <div class="scan-steps" id="scan-steps">
+        <div class="scan-step" id="step-1">[ ] Tokenisasi teks...</div>
+        <div class="scan-step" id="step-2">[ ] Menjalankan model IndoBERT...</div>
+        <div class="scan-step" id="step-3">[ ] Menghitung probabilitas...</div>
+        <div class="scan-step" id="step-4">[ ] Menyusun hasil analisis...</div>
+      </div>
+    </div>
 
     <!-- Result -->
     <div class="card result-card" id="result-card" style="display:none">
@@ -134,15 +143,11 @@
 
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 2: BULK CSV                       -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 2: BULK CSV -->
   <div id="tab-bulk" class="tab-content">
-
     <div class="card">
       <div class="card-label"><span class="blink-dot"></span>FILE_UPLOAD</div>
       <p class="card-desc">Upload CSV dengan kolom <code>text</code>, <code>chat</code>, atau <code>comment</code>. Maks 1000 baris. Model: <code>SVM</code> untuk kecepatan optimal.</p>
-
       <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-file').click()">
         <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(this)">
         <div class="upload-visual">
@@ -157,7 +162,6 @@
         <div class="upload-corner bl"></div>
         <div class="upload-corner br"></div>
       </div>
-
       <div class="card-footer" style="margin-top:16px">
         <span id="bulk-file-info" class="file-info"></span>
         <button id="bulk-btn" onclick="runBulk()" disabled>
@@ -191,7 +195,6 @@
           </button>
         </div>
       </div>
-
       <div class="card table-card">
         <div class="table-header">
           <div class="card-label" style="margin:0"><span class="blink-dot"></span>DETAIL_LOG</div>
@@ -199,24 +202,16 @@
         </div>
         <div class="table-wrap">
           <table id="bulk-table">
-            <thead>
-              <tr>
-                <th>#</th><th>Teks</th><th>Kategori</th><th>Conf.</th><th>Model</th>
-              </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Teks</th><th>Kategori</th><th>Conf.</th><th>Model</th></tr></thead>
             <tbody id="bulk-tbody"></tbody>
           </table>
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- ══════════════════════════════════════ -->
-  <!-- TAB 3: DASHBOARD                      -->
-  <!-- ══════════════════════════════════════ -->
+  <!-- TAB 3: DASHBOARD -->
   <div id="tab-dashboard" class="tab-content">
-
     <div id="dashboard-empty" class="card empty-state">
       <div class="empty-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -227,7 +222,6 @@
       <div class="empty-title">Dashboard Kosong</div>
       <div class="empty-desc">Jalankan analisis Bulk CSV terlebih dahulu untuk melihat statistik dan visualisasi data.</div>
     </div>
-
     <div id="dashboard-content" style="display:none">
       <div class="stat-grid" id="stat-grid"></div>
       <div class="chart-grid">
@@ -245,7 +239,6 @@
         <div class="chart-wrap" style="height:160px"><canvas id="chart-conf"></canvas></div>
       </div>
     </div>
-
   </div>
 
   <footer>
@@ -264,32 +257,19 @@
   const canvas = document.getElementById('grid-canvas');
   const ctx    = canvas.getContext('2d');
   let w, h;
-
-  function resize() {
-    w = canvas.width  = window.innerWidth;
-    h = canvas.height = window.innerHeight;
-  }
-
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
   function draw() {
     ctx.clearRect(0, 0, w, h);
-    const size = 48;
     ctx.strokeStyle = 'rgba(0, 255, 136, 0.04)';
     ctx.lineWidth   = 1;
-    for (let x = 0; x < w; x += size) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let y = 0; y < h; y += size) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-    // Corner accents
-    const accent = 'rgba(0,255,136,0.15)';
-    ctx.strokeStyle = accent;
+    for (let x = 0; x < w; x += 48) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for (let y = 0; y < h; y += 48) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(0,255,136,0.15)';
     ctx.lineWidth   = 1.5;
     [[0,0,1,1],[w,0,-1,1],[0,h,1,-1],[w,h,-1,-1]].forEach(([x,y,dx,dy]) => {
-      ctx.beginPath(); ctx.moveTo(x, y+dy*30); ctx.lineTo(x, y); ctx.lineTo(x+dx*30, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y+dy*30); ctx.lineTo(x,y); ctx.lineTo(x+dx*30,y); ctx.stroke();
     });
   }
-
   resize(); draw();
   window.addEventListener('resize', () => { resize(); draw(); });
 })();
@@ -313,23 +293,14 @@ function switchTab(name) {
 //  HELPERS
 // ═══════════════════════════════════════════
 const LABEL_META = {
-  'Abusive':    { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',    icon: '⚡', desc: 'Kata kasar / makian' },
-  'Normal':     { color: '#00ff88', bg: 'rgba(0,255,136,0.10)',    icon: '✓',  desc: 'Komentar aman' },
-  'Hate Speech':{ color: '#f97316', bg: 'rgba(249,115,22,0.12)',   icon: '☢',  desc: 'Ujaran kebencian' },
-  'Harassment': { color: '#a78bfa', bg: 'rgba(167,139,250,0.12)',  icon: '⚠',  desc: 'Pelecehan / intimidasi' },
+  'Abusive':    { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   icon: '⚡', desc: 'Kata kasar / makian' },
+  'Normal':     { color: '#00ff88', bg: 'rgba(0,255,136,0.10)',   icon: '✓',  desc: 'Komentar aman' },
+  'Hate Speech':{ color: '#f97316', bg: 'rgba(249,115,22,0.12)',  icon: '☢',  desc: 'Ujaran kebencian' },
+  'Harassment': { color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', icon: '⚠',  desc: 'Pelecehan / intimidasi' },
 };
-
-function getMeta(label) {
-  return LABEL_META[label] || { color: '#00ff88', bg: 'rgba(0,255,136,0.1)', icon: '?', desc: '' };
-}
-
-function getFillClass(label) {
-  return { 'Normal': 'normal', 'Abusive': 'severe', 'Hate Speech': 'danger', 'Harassment': 'purple' }[label] || 'normal';
-}
-
-function escapeHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function getMeta(label) { return LABEL_META[label] || { color:'#00ff88', bg:'rgba(0,255,136,0.1)', icon:'?', desc:'' }; }
+function getFillClass(label) { return {'Normal':'normal','Abusive':'severe','Hate Speech':'danger','Harassment':'purple'}[label]||'normal'; }
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ═══════════════════════════════════════════
 //  SINGLE TEXT
@@ -350,30 +321,109 @@ function showError(msg) {
   document.getElementById('result-card').style.display = 'none';
   document.getElementById('warning-box').style.display = 'none';
 }
-
 function hideError() { document.getElementById('error-box').style.display = 'none'; }
+
+// ✅ SCANNING ANIMATION
+function showScanAnimation() {
+  const card = document.getElementById('scan-card');
+  const bar  = document.getElementById('scan-bar');
+  const glow = document.getElementById('scan-glow');
+  card.style.display = 'block';
+  bar.style.width = glow.style.width = '0%';
+
+  // Reset steps
+  ['step-1','step-2','step-3','step-4'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('done', 'active');
+    el.textContent = el.textContent.replace('[✓]','[ ]').replace('[>]','[ ]');
+  });
+
+  const steps = [
+    { id: 'step-1', text: 'Tokenisasi teks...',             pct: 25  },
+    { id: 'step-2', text: 'Menjalankan model IndoBERT...',  pct: 55  },
+    { id: 'step-3', text: 'Menghitung probabilitas...',     pct: 80  },
+    { id: 'step-4', text: 'Menyusun hasil analisis...',     pct: 95  },
+  ];
+
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) {
+      const prev = document.getElementById(steps[i-1].id);
+      prev.textContent = `[✓] ${steps[i-1].text}`;
+      prev.classList.remove('active');
+      prev.classList.add('done');
+    }
+    if (i < steps.length) {
+      const curr = document.getElementById(steps[i].id);
+      curr.textContent = `[>] ${steps[i].text}`;
+      curr.classList.add('active');
+      bar.style.width = glow.style.width = steps[i].pct + '%';
+      i++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 320);
+
+  return interval;
+}
+
+function hideScanAnimation(intervalId) {
+  clearInterval(intervalId);
+  const bar  = document.getElementById('scan-bar');
+  const glow = document.getElementById('scan-glow');
+  bar.style.width = glow.style.width = '100%';
+
+  // Tandai semua step selesai
+  ['step-1','step-2','step-3','step-4'].forEach((id, idx) => {
+    const el = document.getElementById(id);
+    const texts = ['Tokenisasi teks...','Menjalankan model IndoBERT...','Menghitung probabilitas...','Menyusun hasil analisis...'];
+    el.textContent = `[✓] ${texts[idx]}`;
+    el.classList.remove('active');
+    el.classList.add('done');
+  });
+
+  setTimeout(() => {
+    document.getElementById('scan-card').style.display = 'none';
+  }, 500);
+}
 
 async function detect() {
   const text = input.value.trim();
   if (!text) { showError('Teks tidak boleh kosong.'); return; }
   hideError();
   document.getElementById('warning-box').style.display = 'none';
+  document.getElementById('result-card').style.display = 'none';
 
   const btn = document.getElementById('detect-btn');
   btn.disabled = true; btn.classList.add('loading');
 
+  // ✅ Mulai animasi scanning
+  const scanInterval = showScanAnimation();
+
   try {
-    const res  = await fetch('/predict', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text}) });
+    const res  = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
     const data = await res.json();
+
+    // ✅ Sembunyikan scanning, tampilkan hasil
+    hideScanAnimation(scanInterval);
+
     if (!res.ok || data.error) { showError(data.error || 'Terjadi kesalahan.'); return; }
+
     if (data.low_confidence && data.warning) {
       const wb = document.getElementById('warning-box');
       wb.innerHTML = `<span class="err-icon">◈</span> ${data.warning}`;
       wb.style.display = 'flex';
     }
-    renderResult(data);
-  } catch { showError('Tidak dapat terhubung ke server.'); }
-  finally { btn.disabled = false; btn.classList.remove('loading'); }
+
+    // ✅ Delay sedikit biar transisi lebih smooth
+    setTimeout(() => renderResult(data), 550);
+
+  } catch {
+    hideScanAnimation(scanInterval);
+    showError('Tidak dapat terhubung ke server.');
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+  }
 }
 
 function renderResult(data) {
@@ -385,34 +435,32 @@ function renderResult(data) {
   card.style.setProperty('--result-color', meta.color);
   card.style.borderColor = meta.color + '40';
 
-  document.getElementById('result-icon').textContent   = meta.icon;
-  document.getElementById('result-icon').style.color   = meta.color;
-  document.getElementById('result-badge').textContent  = data.low_confidence ? '// UNCERTAIN' : '// DETECTED';
-  document.getElementById('result-badge').style.color  = meta.color;
-  document.getElementById('result-label').textContent  = label;
-  document.getElementById('result-label').style.color  = meta.color;
-  document.getElementById('result-desc').textContent   = meta.desc;
+  document.getElementById('result-icon').textContent  = meta.icon;
+  document.getElementById('result-icon').style.color  = meta.color;
+  document.getElementById('result-badge').textContent = data.low_confidence ? '// UNCERTAIN' : '// DETECTED';
+  document.getElementById('result-badge').style.color = meta.color;
+  document.getElementById('result-label').textContent = label;
+  document.getElementById('result-label').style.color = meta.color;
+  document.getElementById('result-desc').textContent  = meta.desc;
   document.getElementById('result-model-tag').textContent = `via ${data.model_used || 'AI'}`;
 
-  // Confidence ring
-  const pct   = data.confidence || 0;
-  const circ  = 213.6;
+  const pct    = data.confidence || 0;
+  const circ   = 213.6;
   const offset = circ - (pct / 100) * circ;
   const ring   = document.getElementById('conf-ring');
-  ring.style.stroke       = meta.color;
+  ring.style.stroke = meta.color;
   ring.style.strokeDashoffset = circ;
   setTimeout(() => { ring.style.transition = 'stroke-dashoffset 0.8s ease'; ring.style.strokeDashoffset = offset; }, 50);
   document.getElementById('result-pct').textContent = pct + '%';
   document.getElementById('result-pct').style.color = meta.color;
 
-  // Prob bars
   const container = document.getElementById('prob-bars');
   container.innerHTML = '';
   const probs  = data.probabilities || {};
   const sorted = Object.keys(probs).sort((a,b) => (probs[b]||0)-(probs[a]||0));
   sorted.forEach(l => {
-    const p  = probs[l] || 0;
-    const m  = getMeta(l);
+    const p   = probs[l] || 0;
+    const m   = getMeta(l);
     const row = document.createElement('div');
     row.className = 'prob-row';
     row.innerHTML = `
@@ -426,7 +474,7 @@ function renderResult(data) {
   requestAnimationFrame(() => {
     document.querySelectorAll('.prob-fill').forEach(el => { el.style.width = el.dataset.target + '%'; });
   });
-  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  card.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
 // ═══════════════════════════════════════════
@@ -446,8 +494,8 @@ function handleFileSelect(inp) { if (inp.files[0]) setFile(inp.files[0]); }
 
 function setFile(f) {
   selectedFile = f;
-  document.getElementById('upload-text').textContent = f.name;
-  document.getElementById('upload-sub').textContent  = `${(f.size/1024).toFixed(1)} KB  ·  CSV`;
+  document.getElementById('upload-text').textContent    = f.name;
+  document.getElementById('upload-sub').textContent     = `${(f.size/1024).toFixed(1)} KB  ·  CSV`;
   document.getElementById('bulk-file-info').textContent = f.name;
   document.getElementById('bulk-btn').disabled = false;
   zone.classList.add('has-file');
@@ -461,10 +509,10 @@ async function runBulk() {
   const btn = document.getElementById('bulk-btn');
   btn.disabled = true; btn.classList.add('loading');
 
-  const prog    = document.getElementById('bulk-progress');
-  const bar     = document.getElementById('progress-bar');
-  const glow    = document.getElementById('progress-glow');
-  const txt     = document.getElementById('progress-text');
+  const prog = document.getElementById('bulk-progress');
+  const bar  = document.getElementById('progress-bar');
+  const glow = document.getElementById('progress-glow');
+  const txt  = document.getElementById('progress-text');
   prog.style.display = 'block';
   bar.style.width = glow.style.width = '0%';
 
@@ -472,16 +520,16 @@ async function runBulk() {
   const ticker = setInterval(() => {
     pct = Math.min(pct + Math.random() * 6, 88);
     bar.style.width = glow.style.width = pct + '%';
-    if (pct > 20)  txt.textContent = 'Membaca file CSV...';
-    if (pct > 45)  txt.textContent = 'Memproses teks...';
-    if (pct > 70)  txt.textContent = 'Menjalankan model SVM...';
-    if (pct > 84)  txt.textContent = 'Menyusun hasil...';
+    if (pct > 20) txt.textContent = 'Membaca file CSV...';
+    if (pct > 45) txt.textContent = 'Memproses teks...';
+    if (pct > 70) txt.textContent = 'Menjalankan model SVM...';
+    if (pct > 84) txt.textContent = 'Menyusun hasil...';
   }, 350);
 
   try {
     const fd = new FormData();
     fd.append('file', selectedFile);
-    const res  = await fetch('/bulk', { method: 'POST', body: fd });
+    const res  = await fetch('/bulk', { method:'POST', body:fd });
     const data = await res.json();
     clearInterval(ticker);
     bar.style.width = glow.style.width = '100%';
@@ -508,11 +556,11 @@ function renderBulkResult(data) {
   el.innerHTML = '';
 
   [
-    { label: 'Total Teks',  val: total,                       color: '#00ff88' },
-    { label: 'Abusive',     val: stats['Abusive']    || 0,   color: '#ef4444' },
-    { label: 'Hate Speech', val: stats['Hate Speech']|| 0,   color: '#f97316' },
-    { label: 'Harassment',  val: stats['Harassment'] || 0,   color: '#a78bfa' },
-    { label: 'Normal',      val: stats['Normal']     || 0,   color: '#00ff88' },
+    { label:'Total Teks',  val:total,                     color:'#00ff88' },
+    { label:'Abusive',     val:stats['Abusive']    ||0,   color:'#ef4444' },
+    { label:'Hate Speech', val:stats['Hate Speech']||0,   color:'#f97316' },
+    { label:'Harassment',  val:stats['Harassment'] ||0,   color:'#a78bfa' },
+    { label:'Normal',      val:stats['Normal']     ||0,   color:'#00ff88' },
   ].forEach(item => {
     const pct = total && item.label !== 'Total Teks' ? ((item.val/total)*100).toFixed(1)+'%' : '';
     const d   = document.createElement('div');
@@ -534,7 +582,6 @@ function renderBulkResult(data) {
   const tbody = document.getElementById('bulk-tbody');
   tbody.innerHTML = '';
   document.getElementById('table-count').textContent = `${total} entri`;
-
   data.results.forEach((r, i) => {
     const meta = getMeta(r.prediction);
     const tr   = document.createElement('tr');
@@ -553,7 +600,7 @@ function renderBulkResult(data) {
 
 async function downloadResult() {
   if (!bulkResults) return;
-  const res  = await fetch('/bulk/download', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({results: bulkResults}) });
+  const res  = await fetch('/bulk/download', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({results:bulkResults}) });
   const blob = await res.blob();
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -568,19 +615,19 @@ function updateDashboard(data) {
   document.getElementById('dashboard-empty').style.display   = 'none';
   document.getElementById('dashboard-content').style.display = 'block';
 
-  const stats  = data.stats;
-  const total  = data.total;
-  const danger = (stats['Abusive']||0) + (stats['Hate Speech']||0) + (stats['Harassment']||0);
-  const safe   = stats['Normal'] || 0;
+  const stats     = data.stats;
+  const total     = data.total;
+  const danger    = (stats['Abusive']||0)+(stats['Hate Speech']||0)+(stats['Harassment']||0);
+  const safe      = stats['Normal']||0;
   const dangerPct = total ? ((danger/total)*100).toFixed(1) : 0;
 
   const grid = document.getElementById('stat-grid');
   grid.innerHTML = '';
   [
-    { icon: '◈', label: 'Total Teks',   val: total,        color: '#00ff88' },
-    { icon: '⚡', label: 'Berbahaya',   val: danger,       color: '#ef4444' },
-    { icon: '✓', label: 'Aman',         val: safe,         color: '#00ff88' },
-    { icon: '☢', label: '% Berbahaya',  val: dangerPct+'%',color: '#f97316' },
+    { icon:'◈', label:'Total Teks',  val:total,         color:'#00ff88' },
+    { icon:'⚡', label:'Berbahaya',  val:danger,        color:'#ef4444' },
+    { icon:'✓',  label:'Aman',       val:safe,          color:'#00ff88' },
+    { icon:'☢',  label:'% Berbahaya',val:dangerPct+'%', color:'#f97316' },
   ].forEach(item => {
     const d = document.createElement('div');
     d.className = 'stat-card';
@@ -593,30 +640,30 @@ function updateDashboard(data) {
 
   const labelOrder = ['Abusive','Normal','Hate Speech','Harassment'];
   const colors     = ['#ef4444','#00ff88','#f97316','#a78bfa'];
-  const vals       = labelOrder.map(l => stats[l] || 0);
+  const vals       = labelOrder.map(l => stats[l]||0);
   const chartOpts  = {
-    plugins: { legend: { display: false } },
+    plugins: { legend: { display:false } },
     scales: {
-      x: { ticks: { color:'#4a4a6a', font:{ size:11 } }, grid: { color:'rgba(0,255,136,0.05)' } },
-      y: { ticks: { color:'#4a4a6a', font:{ size:11 } }, grid: { color:'rgba(0,255,136,0.05)' } }
+      x: { ticks:{ color:'#4a4a6a', font:{size:11} }, grid:{ color:'rgba(0,255,136,0.05)' } },
+      y: { ticks:{ color:'#4a4a6a', font:{size:11} }, grid:{ color:'rgba(0,255,136,0.05)' } }
     }
   };
 
   if (donutChart) donutChart.destroy();
   donutChart = new Chart(document.getElementById('chart-donut'), {
     type: 'doughnut',
-    data: { labels: labelOrder, datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 8 }] },
-    options: { cutout:'70%', plugins: { legend: { position:'bottom', labels: { color:'#6b6b8a', font:{ size:11 }, padding:14 } } } }
+    data: { labels:labelOrder, datasets:[{ data:vals, backgroundColor:colors, borderWidth:0, hoverOffset:8 }] },
+    options: { cutout:'70%', plugins:{ legend:{ position:'bottom', labels:{ color:'#6b6b8a', font:{size:11}, padding:14 } } } }
   });
 
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('chart-bar'), {
     type: 'bar',
-    data: { labels: labelOrder, datasets: [{ data: vals, backgroundColor: colors, borderRadius: 4, borderSkipped: false }] },
+    data: { labels:labelOrder, datasets:[{ data:vals, backgroundColor:colors, borderRadius:4, borderSkipped:false }] },
     options: chartOpts
   });
 
-  const buckets = { '0–50':0,'50–65':0,'65–80':0,'80–90':0,'90–100':0 };
+  const buckets = {'0–50':0,'50–65':0,'65–80':0,'80–90':0,'90–100':0};
   data.results.forEach(r => {
     const c = r.confidence;
     if (c < 50) buckets['0–50']++;
@@ -629,7 +676,7 @@ function updateDashboard(data) {
   if (confChart) confChart.destroy();
   confChart = new Chart(document.getElementById('chart-conf'), {
     type: 'bar',
-    data: { labels: Object.keys(buckets), datasets: [{ data: Object.values(buckets), backgroundColor: 'rgba(0,255,136,0.6)', borderRadius:4, borderSkipped:false }] },
+    data: { labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:'rgba(0,255,136,0.6)', borderRadius:4, borderSkipped:false }] },
     options: chartOpts
   });
 }
