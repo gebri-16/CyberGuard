@@ -1,9 +1,10 @@
 // ═══════════════════════════════════════════
 //  CyberGuard Extension — content.js
-//  Detects selected text on any webpage
+//  Deteksi selected text di halaman manapun
 // ═══════════════════════════════════════════
 
-const API_URL = 'http://localhost:5000/predict';
+const HF_URL    = 'https://gebriyan-cyberguard.hf.space/predict';
+const LOCAL_URL = 'http://localhost:5000/predict';
 
 const LABEL_META = {
   'Abusive':     { color: '#ef4444', icon: '⚡', desc: 'Kata kasar / makian' },
@@ -16,12 +17,23 @@ function getMeta(label) {
   return LABEL_META[label] || { color: '#00ff88', icon: '?', desc: '' };
 }
 
+// ── Auto-detect API URL ──
+async function getApiUrl() {
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 1000);
+    await fetch('http://localhost:5000/', { signal: ctrl.signal });
+    return LOCAL_URL;
+  } catch {
+    return HF_URL;
+  }
+}
+
 // ── State ──
 let tooltipEl   = null;
 let lastText    = '';
 let detectTimer = null;
 
-// ── Remove existing tooltip ──
 function removeTooltip() {
   if (tooltipEl) {
     tooltipEl.remove();
@@ -29,7 +41,6 @@ function removeTooltip() {
   }
 }
 
-// ── Build tooltip HTML ──
 function createTooltip(x, y) {
   removeTooltip();
 
@@ -37,7 +48,6 @@ function createTooltip(x, y) {
   el.id = 'cyberguard-tooltip';
   el.innerHTML = `
     <div class="cg-popup">
-      <!-- Header -->
       <div class="cg-header">
         <div class="cg-brand">
           <div class="cg-shield">
@@ -51,7 +61,6 @@ function createTooltip(x, y) {
         <button class="cg-close" id="cg-close-btn" title="Tutup">✕</button>
       </div>
 
-      <!-- Loading -->
       <div class="cg-loading" id="cg-loading">
         <div class="cg-spinner"></div>
         <span class="cg-loading-text">Menganalisis teks...</span>
@@ -60,13 +69,11 @@ function createTooltip(x, y) {
         <div class="cg-scan-bar" id="cg-scan-bar" style="width:0%"></div>
       </div>
 
-      <!-- Error -->
       <div class="cg-error" id="cg-error">
         <span>⚠</span>
         <span id="cg-error-msg">Tidak dapat terhubung ke server.</span>
       </div>
 
-      <!-- Result -->
       <div class="cg-result" id="cg-result">
         <div class="cg-result-main">
           <div class="cg-result-icon" id="cg-icon"></div>
@@ -102,21 +109,16 @@ function createTooltip(x, y) {
     </div>
   `;
 
-  // Position tooltip above selection
   document.body.appendChild(el);
 
-  const popup   = el.querySelector('.cg-popup');
-  const popW    = 260;
-  const popH    = popup.offsetHeight || 120;
-  const margin  = 10;
+  const popup  = el.querySelector('.cg-popup');
+  const popW   = 260;
+  const margin = 10;
 
   let left = x - popW / 2;
-  let top  = y - popH - margin;
+  let top  = y - (popup.offsetHeight || 120) - margin;
 
-  // Clamp horizontally
   left = Math.max(margin, Math.min(left, window.innerWidth - popW - margin));
-
-  // If not enough space above, show below
   if (top < window.scrollY + margin) {
     top = y + margin;
     el.querySelector('.cg-arrow').style.display = 'none';
@@ -125,13 +127,11 @@ function createTooltip(x, y) {
   el.style.left = left + 'px';
   el.style.top  = (top + window.scrollY) + 'px';
 
-  // Close button
   el.querySelector('#cg-close-btn').addEventListener('click', e => {
     e.stopPropagation();
     removeTooltip();
   });
 
-  // Open web button
   el.querySelector('#cg-open-btn').addEventListener('click', () => {
     chrome.runtime.sendMessage({ type: 'OPEN_WEB' });
   });
@@ -140,7 +140,6 @@ function createTooltip(x, y) {
   return el;
 }
 
-// ── Animate scan bar ──
 function animateScanBar(el) {
   const bar = el.querySelector('#cg-scan-bar');
   let pct   = 0;
@@ -151,21 +150,17 @@ function animateScanBar(el) {
   return id;
 }
 
-// ── Render result ──
 function renderResult(el, data) {
   const label = data.prediction;
   const meta  = getMeta(label);
   const popup = el.querySelector('.cg-popup');
 
-  // Hide loading
-  el.querySelector('#cg-loading').style.display  = 'none';
+  el.querySelector('#cg-loading').style.display   = 'none';
   el.querySelector('#cg-scan-wrap').style.display = 'none';
 
-  // Show result
   const resultDiv = el.querySelector('#cg-result');
   resultDiv.style.display = 'block';
 
-  // Color the border
   popup.style.borderColor = meta.color + '50';
 
   el.querySelector('#cg-icon').textContent  = meta.icon;
@@ -179,7 +174,6 @@ function renderResult(el, data) {
   el.querySelector('#cg-conf').style.color  = meta.color;
   el.querySelector('#cg-model-tag').textContent = `via ${data.model_used || 'AI'}`;
 
-  // Prob bars
   const container = el.querySelector('#cg-prob-bars');
   container.innerHTML = '';
   const probs  = data.probabilities || {};
@@ -204,42 +198,21 @@ function renderResult(el, data) {
     });
   });
 
-  // Reposition after content is rendered
-  repositionTooltip(el);
-}
-
-// ── Reposition after content renders ──
-function repositionTooltip(el) {
   setTimeout(() => {
-    const rect   = el.getBoundingClientRect();
     const margin = 10;
     let left = parseFloat(el.style.left);
-    let top  = parseFloat(el.style.top) - window.scrollY;
-
-    const newH  = el.querySelector('.cg-popup').offsetHeight;
-    const newTop = top - (newH - 120); // adjust for content growth
-
-    if (newTop > margin) {
-      el.style.top = (newTop + window.scrollY) + 'px';
-    }
-
-    // Clamp horizontal again
-    left = Math.max(margin, Math.min(left, window.innerWidth - rect.width - margin));
+    left = Math.max(margin, Math.min(left, window.innerWidth - el.querySelector('.cg-popup').offsetWidth - margin));
     el.style.left = left + 'px';
   }, 50);
 }
 
-// ── Show error ──
 function renderError(el, msg) {
-  el.querySelector('#cg-loading').style.display  = 'none';
+  el.querySelector('#cg-loading').style.display   = 'none';
   el.querySelector('#cg-scan-wrap').style.display = 'none';
-
-  const errDiv = el.querySelector('#cg-error');
-  el.querySelector('#cg-error-msg').textContent = msg;
-  errDiv.style.display = 'flex';
+  el.querySelector('#cg-error-msg').textContent   = msg;
+  el.querySelector('#cg-error').style.display     = 'flex';
 }
 
-// ── Main: detect selected text ──
 async function detectSelected(text, x, y) {
   if (text === lastText && tooltipEl) return;
   lastText = text;
@@ -248,7 +221,8 @@ async function detectSelected(text, x, y) {
   const scanId = animateScanBar(el);
 
   try {
-    const res  = await fetch(API_URL, {
+    const apiUrl = await getApiUrl();
+    const res    = await fetch(apiUrl, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ text }),
@@ -266,13 +240,11 @@ async function detectSelected(text, x, y) {
 
   } catch {
     clearInterval(scanId);
-    renderError(el, 'Tidak dapat terhubung ke server Flask (localhost:5000).');
+    renderError(el, 'Tidak dapat terhubung ke server lokal maupun Hugging Face.');
   }
 }
 
-// ── Listen for mouseup: check selected text ──
 document.addEventListener('mouseup', e => {
-  // Don't trigger inside our own tooltip
   if (tooltipEl && tooltipEl.contains(e.target)) return;
 
   clearTimeout(detectTimer);
@@ -281,7 +253,6 @@ document.addEventListener('mouseup', e => {
     const text = selection ? selection.toString().trim() : '';
 
     if (!text || text.length < 3) {
-      // Only remove if clicked outside
       if (tooltipEl && !tooltipEl.contains(e.target)) {
         removeTooltip();
         lastText = '';
@@ -289,18 +260,10 @@ document.addEventListener('mouseup', e => {
       return;
     }
 
-    if (text.length > 500) {
-      // Truncate silently
-      const trimmed = text.slice(0, 500);
-      detectSelected(trimmed, e.clientX, e.clientY);
-      return;
-    }
-
-    detectSelected(text, e.clientX, e.clientY);
-  }, 400); // slight debounce to avoid firing on every click
+    detectSelected(text.slice(0, 500), e.clientX, e.clientY);
+  }, 400);
 });
 
-// ── Close tooltip on Escape ──
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     removeTooltip();
@@ -308,7 +271,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Listen for messages from background (context menu) ──
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === 'ANALYZE_SELECTION') {
     const selection = window.getSelection();

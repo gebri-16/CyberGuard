@@ -2,7 +2,8 @@
 //  CyberGuard Extension — popup.js
 // ═══════════════════════════════════════════
 
-const API_URL = 'http://localhost:5000/predict';
+const HF_URL    = 'https://gebriyan-cyberguard.hf.space/predict';
+const LOCAL_URL = 'http://localhost:5000/predict';
 
 const LABEL_META = {
   'Abusive':     { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   icon: '⚡', desc: 'Kata kasar / makian' },
@@ -26,27 +27,50 @@ const resultCard = document.getElementById('result-card');
 const statusDot  = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 
-// ── Init: check server status ──
-async function checkServerStatus() {
+// ── Auto-detect API URL: lokal dulu, fallback ke HF ──
+async function getApiUrl() {
   try {
     const ctrl = new AbortController();
-    const id   = setTimeout(() => ctrl.abort(), 3000);
+    setTimeout(() => ctrl.abort(), 1000);
     await fetch('http://localhost:5000/', { signal: ctrl.signal });
-    clearTimeout(id);
-    setStatus(true);
+    return LOCAL_URL;
   } catch {
-    setStatus(false);
+    return HF_URL;
   }
 }
 
-function setStatus(online) {
-  if (online) {
-    statusDot.className  = 'status-dot';
-    statusText.className = 'status-text';
-    statusText.textContent = 'ONLINE';
+// ── Check server status ──
+async function checkServerStatus() {
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 1000);
+    await fetch('http://localhost:5000/', { signal: ctrl.signal });
+    setStatus('local');
+    return;
+  } catch {}
+
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch('https://gebriyan-cyberguard.hf.space/', { signal: ctrl.signal });
+    if (res.ok) { setStatus('hf'); return; }
+  } catch {}
+
+  setStatus('offline');
+}
+
+function setStatus(mode) {
+  if (mode === 'local') {
+    statusDot.className   = 'status-dot';
+    statusText.className  = 'status-text';
+    statusText.textContent = 'LOCAL';
+  } else if (mode === 'hf') {
+    statusDot.className   = 'status-dot';
+    statusText.className  = 'status-text';
+    statusText.textContent = 'HF SPACE';
   } else {
-    statusDot.className  = 'status-dot offline';
-    statusText.className = 'status-text offline';
+    statusDot.className   = 'status-dot offline';
+    statusText.className  = 'status-text offline';
     statusText.textContent = 'OFFLINE';
   }
 }
@@ -146,7 +170,8 @@ async function detect() {
   const scanInterval = startScan();
 
   try {
-    const res  = await fetch(API_URL, {
+    const apiUrl = await getApiUrl();
+    const res    = await fetch(apiUrl, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ text }),
@@ -164,7 +189,7 @@ async function detect() {
 
   } catch (err) {
     stopScan(scanInterval);
-    showError('Tidak dapat terhubung ke server. Pastikan Flask berjalan di localhost:5000.');
+    showError('Tidak dapat terhubung ke server lokal maupun Hugging Face.');
   } finally {
     detectBtn.disabled = false;
     detectBtn.classList.remove('loading');
@@ -203,7 +228,6 @@ function renderResult(data) {
   confPct.textContent = pct + '%';
   confPct.style.color = meta.color;
 
-  // Prob bars
   const container = document.getElementById('prob-bars');
   container.innerHTML = '';
   const probs  = data.probabilities || {};
@@ -229,23 +253,25 @@ function renderResult(data) {
 }
 
 // ── Open web link ──
-document.getElementById('open-web').addEventListener('click', e => {
+document.getElementById('open-web').addEventListener('click', async e => {
   e.preventDefault();
-  chrome.tabs.create({ url: 'http://localhost:5000' });
+  const apiUrl = await getApiUrl();
+  const webUrl = apiUrl.includes('localhost') 
+    ? 'http://localhost:5000' 
+    : 'https://gebriyan-cyberguard.hf.space';
+  chrome.tabs.create({ url: webUrl });
 });
 
+// ── On load ──
 document.addEventListener('DOMContentLoaded', async () => {
   checkServerStatus();
 
-  // If popup was opened via context menu with selected text
   const result = await chrome.storage.local.get('selectedText');
   if (result.selectedText) {
     textInput.value = result.selectedText;
     const n = textInput.value.length;
     charCount.textContent = `${n} / 500`;
-    // Auto-detect
     detect();
-    // Clear storage
     chrome.storage.local.remove('selectedText');
   }
 });

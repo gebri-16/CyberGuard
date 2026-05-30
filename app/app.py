@@ -10,7 +10,12 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 app = Flask(__name__)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IS_HF_SPACES = os.environ.get("SPACE_ID") is not None
+
+if IS_HF_SPACES:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, "model", "saved")
 BERT_PATH = os.path.join(MODEL_DIR, "indobert_cyberguard")
 
@@ -116,6 +121,18 @@ def predict_svm(text: str) -> dict:
 # ============================================================
 def predict_one(text: str) -> dict:
     clean = preprocess(text)
+
+    
+    for kata in KATA_ABUSIVE:
+        if kata in clean:
+            return {
+                "prediction":     "Abusive",
+                "confidence":     99.0,
+                "probabilities":  {"Abusive": 99.0, "Normal": 0.4, "Hate Speech": 0.3, "Harassment": 0.3},
+                "model_used":     "Rule-based",
+                "low_confidence": False
+            }
+
     try:
         result = predict_bert(clean)
     except Exception as e:
