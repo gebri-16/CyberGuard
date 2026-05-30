@@ -6,6 +6,9 @@
   <title>CyberGuard — Pendeteksi Cyberbullying Indonesia</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- Favicon SVG inline via data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23060d14'/%3E%3Cpolygon points='32,8 52,19 52,45 32,56 12,45 12,19' fill='rgba(0,255,136,0.1)' stroke='%2300ff88' stroke-width='2'/%3E%3Cpolygon points='32,14 47,22.5 47,41.5 32,50 17,41.5 17,22.5' fill='none' stroke='rgba(0,255,136,0.25)' stroke-width='1'/%3E%3Ctext x='32' y='37' text-anchor='middle' font-family='Arial Black,sans-serif' font-weight='900' font-size='16' fill='%2300ff88'%3ECG%3C/text%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -20,10 +23,27 @@
   <!-- Header -->
   <header>
     <div class="header-top">
+      <!-- LOGO: Hexagon CG -->
       <div class="shield-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.25C17.25 23.15 21 18.25 21 13V7l-9-5z"/>
-          <path d="M9 12l2 2 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer hexagon -->
+          <polygon points="24,4 42,14 42,34 24,44 6,34 6,14"
+            fill="rgba(0,255,136,0.08)"
+            stroke="#00ff88"
+            stroke-width="1.5"
+            stroke-linejoin="round"/>
+          <!-- Inner hexagon ring -->
+          <polygon points="24,10 37,17.5 37,32.5 24,40 11,32.5 11,17.5"
+            fill="none"
+            stroke="rgba(0,255,136,0.2)"
+            stroke-width="0.8"/>
+          <!-- CG monogram -->
+          <text x="24" y="29"
+            text-anchor="middle"
+            font-family="'Orbitron', monospace"
+            font-weight="900"
+            font-size="13"
+            fill="#00ff88">CG</text>
         </svg>
       </div>
       <div class="header-text">
@@ -90,7 +110,6 @@
     <div id="error-box"></div>
     <div id="warning-box"></div>
 
-    <!-- ✅ SCANNING ANIMATION CARD -->
     <div class="card" id="scan-card" style="display:none">
       <div class="card-label"><span class="blink-dot"></span>SCANNING...</div>
       <div class="scan-bar-wrap">
@@ -105,7 +124,6 @@
       </div>
     </div>
 
-    <!-- Result -->
     <div class="card result-card" id="result-card" style="display:none">
       <div class="card-label"><span class="blink-dot"></span>DETECTION_RESULT</div>
       <div class="result-main">
@@ -323,28 +341,23 @@ function showError(msg) {
 }
 function hideError() { document.getElementById('error-box').style.display = 'none'; }
 
-// ✅ SCANNING ANIMATION
 function showScanAnimation() {
   const card = document.getElementById('scan-card');
   const bar  = document.getElementById('scan-bar');
   const glow = document.getElementById('scan-glow');
   card.style.display = 'block';
   bar.style.width = glow.style.width = '0%';
-
-  // Reset steps
   ['step-1','step-2','step-3','step-4'].forEach(id => {
     const el = document.getElementById(id);
     el.classList.remove('done', 'active');
     el.textContent = el.textContent.replace('[✓]','[ ]').replace('[>]','[ ]');
   });
-
   const steps = [
     { id: 'step-1', text: 'Tokenisasi teks...',             pct: 25  },
     { id: 'step-2', text: 'Menjalankan model IndoBERT...',  pct: 55  },
     { id: 'step-3', text: 'Menghitung probabilitas...',     pct: 80  },
     { id: 'step-4', text: 'Menyusun hasil analisis...',     pct: 95  },
   ];
-
   let i = 0;
   const interval = setInterval(() => {
     if (i > 0) {
@@ -363,7 +376,6 @@ function showScanAnimation() {
       clearInterval(interval);
     }
   }, 320);
-
   return interval;
 }
 
@@ -372,8 +384,6 @@ function hideScanAnimation(intervalId) {
   const bar  = document.getElementById('scan-bar');
   const glow = document.getElementById('scan-glow');
   bar.style.width = glow.style.width = '100%';
-
-  // Tandai semua step selesai
   ['step-1','step-2','step-3','step-4'].forEach((id, idx) => {
     const el = document.getElementById(id);
     const texts = ['Tokenisasi teks...','Menjalankan model IndoBERT...','Menghitung probabilitas...','Menyusun hasil analisis...'];
@@ -381,10 +391,7 @@ function hideScanAnimation(intervalId) {
     el.classList.remove('active');
     el.classList.add('done');
   });
-
-  setTimeout(() => {
-    document.getElementById('scan-card').style.display = 'none';
-  }, 500);
+  setTimeout(() => { document.getElementById('scan-card').style.display = 'none'; }, 500);
 }
 
 async function detect() {
@@ -393,31 +400,20 @@ async function detect() {
   hideError();
   document.getElementById('warning-box').style.display = 'none';
   document.getElementById('result-card').style.display = 'none';
-
   const btn = document.getElementById('detect-btn');
   btn.disabled = true; btn.classList.add('loading');
-
-  // ✅ Mulai animasi scanning
   const scanInterval = showScanAnimation();
-
   try {
     const res  = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
     const data = await res.json();
-
-    // ✅ Sembunyikan scanning, tampilkan hasil
     hideScanAnimation(scanInterval);
-
     if (!res.ok || data.error) { showError(data.error || 'Terjadi kesalahan.'); return; }
-
     if (data.low_confidence && data.warning) {
       const wb = document.getElementById('warning-box');
       wb.innerHTML = `<span class="err-icon">◈</span> ${data.warning}`;
       wb.style.display = 'flex';
     }
-
-    // ✅ Delay sedikit biar transisi lebih smooth
     setTimeout(() => renderResult(data), 550);
-
   } catch {
     hideScanAnimation(scanInterval);
     showError('Tidak dapat terhubung ke server.');
@@ -430,11 +426,9 @@ function renderResult(data) {
   const label = data.prediction;
   const meta  = getMeta(label);
   const card  = document.getElementById('result-card');
-
   card.style.display = 'block';
   card.style.setProperty('--result-color', meta.color);
   card.style.borderColor = meta.color + '40';
-
   document.getElementById('result-icon').textContent  = meta.icon;
   document.getElementById('result-icon').style.color  = meta.color;
   document.getElementById('result-badge').textContent = data.low_confidence ? '// UNCERTAIN' : '// DETECTED';
@@ -443,7 +437,6 @@ function renderResult(data) {
   document.getElementById('result-label').style.color = meta.color;
   document.getElementById('result-desc').textContent  = meta.desc;
   document.getElementById('result-model-tag').textContent = `via ${data.model_used || 'AI'}`;
-
   const pct    = data.confidence || 0;
   const circ   = 213.6;
   const offset = circ - (pct / 100) * circ;
@@ -453,7 +446,6 @@ function renderResult(data) {
   setTimeout(() => { ring.style.transition = 'stroke-dashoffset 0.8s ease'; ring.style.strokeDashoffset = offset; }, 50);
   document.getElementById('result-pct').textContent = pct + '%';
   document.getElementById('result-pct').style.color = meta.color;
-
   const container = document.getElementById('prob-bars');
   container.innerHTML = '';
   const probs  = data.probabilities || {};
@@ -505,17 +497,14 @@ async function runBulk() {
   if (!selectedFile) return;
   document.getElementById('bulk-error-box').style.display = 'none';
   document.getElementById('bulk-result').style.display    = 'none';
-
   const btn = document.getElementById('bulk-btn');
   btn.disabled = true; btn.classList.add('loading');
-
   const prog = document.getElementById('bulk-progress');
   const bar  = document.getElementById('progress-bar');
   const glow = document.getElementById('progress-glow');
   const txt  = document.getElementById('progress-text');
   prog.style.display = 'block';
   bar.style.width = glow.style.width = '0%';
-
   let pct = 0;
   const ticker = setInterval(() => {
     pct = Math.min(pct + Math.random() * 6, 88);
@@ -525,7 +514,6 @@ async function runBulk() {
     if (pct > 70) txt.textContent = 'Menjalankan model SVM...';
     if (pct > 84) txt.textContent = 'Menyusun hasil...';
   }, 350);
-
   try {
     const fd = new FormData();
     fd.append('file', selectedFile);
@@ -534,7 +522,6 @@ async function runBulk() {
     clearInterval(ticker);
     bar.style.width = glow.style.width = '100%';
     txt.textContent = `✓ Selesai — ${data.total} baris diproses`;
-
     if (!res.ok || data.error) {
       document.getElementById('bulk-error-box').innerHTML = `<span class="err-icon">⚠</span> ${data.error}`;
       document.getElementById('bulk-error-box').style.display = 'flex';
@@ -554,7 +541,6 @@ function renderBulkResult(data) {
   const total = data.total;
   const el    = document.getElementById('bulk-stats');
   el.innerHTML = '';
-
   [
     { label:'Total Teks',  val:total,                     color:'#00ff88' },
     { label:'Abusive',     val:stats['Abusive']    ||0,   color:'#ef4444' },
@@ -571,14 +557,12 @@ function renderBulkResult(data) {
       ${pct ? `<div class="bstat-pct">${pct}</div>` : ''}`;
     el.appendChild(d);
   });
-
   if (data.truncated) {
     const note = document.createElement('div');
     note.className = 'truncate-note';
     note.textContent = `⚠ File terlalu besar, hanya ${data.max_rows} baris pertama yang diproses.`;
     el.appendChild(note);
   }
-
   const tbody = document.getElementById('bulk-tbody');
   tbody.innerHTML = '';
   document.getElementById('table-count').textContent = `${total} entri`;
@@ -593,7 +577,6 @@ function renderBulkResult(data) {
       <td class="td-model">${r.model_used}</td>`;
     tbody.appendChild(tr);
   });
-
   document.getElementById('bulk-result').style.display = 'block';
   document.getElementById('bulk-result').scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
@@ -614,13 +597,11 @@ async function downloadResult() {
 function updateDashboard(data) {
   document.getElementById('dashboard-empty').style.display   = 'none';
   document.getElementById('dashboard-content').style.display = 'block';
-
   const stats     = data.stats;
   const total     = data.total;
   const danger    = (stats['Abusive']||0)+(stats['Hate Speech']||0)+(stats['Harassment']||0);
   const safe      = stats['Normal']||0;
   const dangerPct = total ? ((danger/total)*100).toFixed(1) : 0;
-
   const grid = document.getElementById('stat-grid');
   grid.innerHTML = '';
   [
@@ -637,7 +618,6 @@ function updateDashboard(data) {
       <div class="stat-lbl">${item.label}</div>`;
     grid.appendChild(d);
   });
-
   const labelOrder = ['Abusive','Normal','Hate Speech','Harassment'];
   const colors     = ['#ef4444','#00ff88','#f97316','#a78bfa'];
   const vals       = labelOrder.map(l => stats[l]||0);
@@ -648,21 +628,18 @@ function updateDashboard(data) {
       y: { ticks:{ color:'#4a4a6a', font:{size:11} }, grid:{ color:'rgba(0,255,136,0.05)' } }
     }
   };
-
   if (donutChart) donutChart.destroy();
   donutChart = new Chart(document.getElementById('chart-donut'), {
     type: 'doughnut',
     data: { labels:labelOrder, datasets:[{ data:vals, backgroundColor:colors, borderWidth:0, hoverOffset:8 }] },
     options: { cutout:'70%', plugins:{ legend:{ position:'bottom', labels:{ color:'#6b6b8a', font:{size:11}, padding:14 } } } }
   });
-
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('chart-bar'), {
     type: 'bar',
     data: { labels:labelOrder, datasets:[{ data:vals, backgroundColor:colors, borderRadius:4, borderSkipped:false }] },
     options: chartOpts
   });
-
   const buckets = {'0–50':0,'50–65':0,'65–80':0,'80–90':0,'90–100':0};
   data.results.forEach(r => {
     const c = r.confidence;
@@ -672,7 +649,6 @@ function updateDashboard(data) {
     else if (c < 90) buckets['80–90']++;
     else buckets['90–100']++;
   });
-
   if (confChart) confChart.destroy();
   confChart = new Chart(document.getElementById('chart-conf'), {
     type: 'bar',
