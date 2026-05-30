@@ -116,15 +116,6 @@ def predict_svm(text: str) -> dict:
 # ============================================================
 def predict_one(text: str) -> dict:
     clean = preprocess(text)
-    for kata in KATA_ABUSIVE:
-        if kata in clean.split():
-            return {
-                "prediction":     "Abusive",
-                "confidence":     99.0,
-                "probabilities":  {"Abusive": 99.0, "Normal": 0.4, "Hate Speech": 0.3, "Harassment": 0.3},
-                "model_used":     "Rule-based",
-                "low_confidence": False
-            }
     try:
         result = predict_bert(clean)
     except Exception as e:
