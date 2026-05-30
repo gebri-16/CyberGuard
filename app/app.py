@@ -10,7 +10,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 app = Flask(__name__)
 
-BASE_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model", "saved")
 BERT_PATH = os.path.join(MODEL_DIR, "indobert_cyberguard")
 
@@ -227,4 +227,5 @@ def bulk_download():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 7860))
+    app.run(host="0.0.0.0", port=port, debug=False)

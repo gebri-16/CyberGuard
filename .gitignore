@@ -11,3 +11,4 @@ model/saved/*
 dataset/raw/*
 dataset/processed/*
 app/uploads/*
+hf-space/
