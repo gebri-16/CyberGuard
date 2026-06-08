@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberGuard — Pendeteksi Cyberbullying Indonesia</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Scanline overlay -->
+<div class="scanlines"></div>
+
+<!-- Animated grid background -->
+<canvas id="grid-canvas"></canvas>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="header-top">
+      <div class="shield-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.25C17.25 23.15 21 18.25 21 13V7l-9-5z"/>
+          <path d="M9 12l2 2 4-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <div class="sys-tag">// SYS:ACTIVE &nbsp;|&nbsp; MODEL:INDOBERT-v3 &nbsp;|&nbsp; ACC:97%</div>
+        <h1>CYBER<span>GUARD</span></h1>
+        <p class="subtitle">Sistem Deteksi Cyberbullying &mdash; Bahasa Indonesia</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><span class="hstat-val">42.4K</span><span class="hstat-lbl">Training Data</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><span class="hstat-val">97%</span><span class="hstat-lbl">Akurasi</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><span class="hstat-val">4</span><span class="hstat-lbl">Kategori</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><span class="hstat-val">2</span><span class="hstat-lbl">Model AI</span></div>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('single')" data-tab="single">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Single Text</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('bulk')" data-tab="bulk">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Bulk CSV</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('dashboard')" data-tab="dashboard">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Dashboard</span>
+    </button>
+  </nav>
+
+  <!-- TAB 1: SINGLE TEXT -->
+  <div id="tab-single" class="tab-content active">
+
+    <div class="cat-legend">
+      <div class="cat-item abusive"><span class="cat-dot"></span>Abusive</div>
+      <div class="cat-item hate"><span class="cat-dot"></span>Hate Speech</div>
+      <div class="cat-item harassment"><span class="cat-dot"></span>Harassment</div>
+      <div class="cat-item normal"><span class="cat-dot"></span>Normal</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-label"><span class="blink-dot"></span>INPUT_STREAM</div>
+        <span class="char-count" id="char-count">0 / 1000</span>
+      </div>
+      <textarea id="text-input"
+        placeholder="// Masukkan teks untuk dianalisis...&#10;// Ctrl+Enter untuk deteksi cepat"
+        maxlength="1000"></textarea>
+      <div class="card-footer">
+        <div class="shortcut-hint">⌃ Enter untuk deteksi</div>
+        <button id="detect-btn" onclick="detect()">
+          <div class="spinner"></div>
+          <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span class="btn-text">ANALISIS</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="error-box"></div>
+    <div id="warning-box"></div>
+
+  
+    <div class="card" id="scan-card" style="display:none">
+      <div class="card-label"><span class="blink-dot"></span>SCANNING...</div>
+      <div class="scan-bar-wrap">
+        <div class="scan-bar" id="scan-bar"></div>
+        <div class="scan-glow" id="scan-glow"></div>
+      </div>
+      <div class="scan-steps" id="scan-steps">
+        <div class="scan-step" id="step-1">[ ] Tokenisasi teks...</div>
+        <div class="scan-step" id="step-2">[ ] Menjalankan model IndoBERT...</div>
+        <div class="scan-step" id="step-3">[ ] Menghitung probabilitas...</div>
+        <div class="scan-step" id="step-4">[ ] Menyusun hasil analisis...</div>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div class="card result-card" id="result-card" style="display:none">
+      <div class="card-label"><span class="blink-dot"></span>DETECTION_RESULT</div>
+      <div class="result-main">
+        <div class="result-left">
+          <div class="result-category-icon" id="result-icon"></div>
+          <div>
+            <div id="result-badge" class="result-badge"></div>
+            <div id="result-label" class="result-label"></div>
+            <div id="result-desc" class="result-desc"></div>
+          </div>
+        </div>
+        <div class="result-right">
+          <div class="confidence-ring">
+            <svg viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="6"/>
+              <circle cx="40" cy="40" r="34" fill="none" stroke-width="6"
+                stroke-linecap="round"
+                stroke-dasharray="213.6"
+                stroke-dashoffset="213.6"
+                id="conf-ring"
+                transform="rotate(-90 40 40)"/>
+            </svg>
+            <div class="conf-inner">
+              <div id="result-pct" class="conf-pct">0%</div>
+              <div class="conf-lbl">conf</div>
+            </div>
+          </div>
+          <div id="result-model-tag" class="model-tag"></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="prob-title">Distribusi Probabilitas</div>
+      <div id="prob-bars"></div>
+    </div>
+
+  </div>
+
+  <!-- TAB 2: BULK CSV -->
+  <div id="tab-bulk" class="tab-content">
+    <div class="card">
+      <div class="card-label"><span class="blink-dot"></span>FILE_UPLOAD</div>
+      <p class="card-desc">Upload CSV dengan kolom <code>text</code>, <code>chat</code>, atau <code>comment</code>. Maks 1000 baris. Model: <code>SVM</code> untuk kecepatan optimal.</p>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-file').click()">
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleFileSelect(this)">
+        <div class="upload-visual">
+          <div class="upload-icon-wrap">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div id="upload-text" class="upload-text">Klik atau drag CSV ke sini</div>
+          <div class="upload-sub" id="upload-sub">Format: .csv &nbsp;|&nbsp; Maks: 1000 baris</div>
+        </div>
+        <div class="upload-corner tl"></div>
+        <div class="upload-corner tr"></div>
+        <div class="upload-corner bl"></div>
+        <div class="upload-corner br"></div>
+      </div>
+      <div class="card-footer" style="margin-top:16px">
+        <span id="bulk-file-info" class="file-info"></span>
+        <button id="bulk-btn" onclick="runBulk()" disabled>
+          <div class="spinner"></div>
+          <svg class="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="btn-text">PROSES CSV</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="bulk-error-box"></div>
+
+    <div id="bulk-progress" style="display:none" class="card">
+      <div class="card-label"><span class="blink-dot"></span>PROCESSING</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-bar"></div>
+        <div class="progress-glow" id="progress-glow"></div>
+      </div>
+      <div id="progress-text" class="progress-text">Menginisialisasi...</div>
+    </div>
+
+    <div id="bulk-result" style="display:none">
+      <div class="card">
+        <div class="card-label"><span class="blink-dot"></span>SCAN_SUMMARY</div>
+        <div class="bulk-stats" id="bulk-stats"></div>
+        <div class="divider"></div>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn-outline" onclick="downloadResult()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      <div class="card table-card">
+        <div class="table-header">
+          <div class="card-label" style="margin:0"><span class="blink-dot"></span>DETAIL_LOG</div>
+          <div id="table-count" class="table-count"></div>
+        </div>
+        <div class="table-wrap">
+          <table id="bulk-table">
+            <thead><tr><th>#</th><th>Teks</th><th>Kategori</th><th>Conf.</th><th>Model</th></tr></thead>
+            <tbody id="bulk-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: DASHBOARD -->
+  <div id="tab-dashboard" class="tab-content">
+    <div id="dashboard-empty" class="card empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </div>
+      <div class="empty-title">Dashboard Kosong</div>
+      <div class="empty-desc">Jalankan analisis Bulk CSV terlebih dahulu untuk melihat statistik dan visualisasi data.</div>
+    </div>
+    <div id="dashboard-content" style="display:none">
+      <div class="stat-grid" id="stat-grid"></div>
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-label"><span class="blink-dot"></span>DISTRIBUSI_LABEL</div>
+          <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-label"><span class="blink-dot"></span>PERBANDINGAN_KATEGORI</div>
+          <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label"><span class="blink-dot"></span>DISTRIBUSI_CONFIDENCE</div>
+        <div class="chart-wrap" style="height:160px"><canvas id="chart-conf"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="footer-tag">CYBERGUARD</span>
+    &nbsp;&mdash;&nbsp; Project AI Deteksi Cyberbullying Bahasa Indonesia &nbsp;&mdash;&nbsp;
+    <span class="footer-tag">IndoBERT + SVM</span>
+  </footer>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  GRID CANVAS BACKGROUND
+// ═══════════════════════════════════════════
+(function() {
+  const canvas = document.getElementById('grid-canvas');
+  const ctx    = canvas.getContext('2d');
+  let w, h;
+  function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(0, 255, 136, 0.04)';
+    ctx.lineWidth   = 1;
+    for (let x = 0; x < w; x += 48) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+    for (let y = 0; y < h; y += 48) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(0,255,136,0.15)';
+    ctx.lineWidth   = 1.5;
+    [[0,0,1,1],[w,0,-1,1],[0,h,1,-1],[w,h,-1,-1]].forEach(([x,y,dx,dy]) => {
+      ctx.beginPath(); ctx.moveTo(x, y+dy*30); ctx.lineTo(x,y); ctx.lineTo(x+dx*30,y); ctx.stroke();
+    });
+  }
+  resize(); draw();
+  window.addEventListener('resize', () => { resize(); draw(); });
+})();
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const LABELS = ['Abusive','Normal','Hate Speech','Harassment'];
+let bulkResults = null, donutChart = null, barChart = null, confChart = null;
+
+// ═══════════════════════════════════════════
+//  TAB
+// ═══════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ═══════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════
+const LABEL_META = {
+  'Abusive':    { color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   icon: '⚡', desc: 'Kata kasar / makian' },
+  'Normal':     { color: '#00ff88', bg: 'rgba(0,255,136,0.10)',   icon: '✓',  desc: 'Komentar aman' },
+  'Hate Speech':{ color: '#f97316', bg: 'rgba(249,115,22,0.12)',  icon: '☢',  desc: 'Ujaran kebencian' },
+  'Harassment': { color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', icon: '⚠',  desc: 'Pelecehan / intimidasi' },
+};
+function getMeta(label) { return LABEL_META[label] || { color:'#00ff88', bg:'rgba(0,255,136,0.1)', icon:'?', desc:'' }; }
+function getFillClass(label) { return {'Normal':'normal','Abusive':'severe','Hate Speech':'danger','Harassment':'purple'}[label]||'normal'; }
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ═══════════════════════════════════════════
+//  SINGLE TEXT
+// ═══════════════════════════════════════════
+const input = document.getElementById('text-input');
+input.addEventListener('input', () => {
+  const n = input.value.length;
+  const el = document.getElementById('char-count');
+  el.textContent = `${n} / 1000`;
+  el.classList.toggle('warn', n > 900);
+});
+input.addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') detect(); });
+
+function showError(msg) {
+  const b = document.getElementById('error-box');
+  b.innerHTML = `<span class="err-icon">⚠</span> ${msg}`;
+  b.style.display = 'flex';
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('warning-box').style.display = 'none';
+}
+function hideError() { document.getElementById('error-box').style.display = 'none'; }
+
+
+function showScanAnimation() {
+  const card = document.getElementById('scan-card');
+  const bar  = document.getElementById('scan-bar');
+  const glow = document.getElementById('scan-glow');
+  card.style.display = 'block';
+  bar.style.width = glow.style.width = '0%';
+
+  
+  ['step-1','step-2','step-3','step-4'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('done', 'active');
+    el.textContent = el.textContent.replace('[✓]','[ ]').replace('[>]','[ ]');
+  });
+
+  const steps = [
+    { id: 'step-1', text: 'Tokenisasi teks...',             pct: 25  },
+    { id: 'step-2', text: 'Menjalankan model IndoBERT...',  pct: 55  },
+    { id: 'step-3', text: 'Menghitung probabilitas...',     pct: 80  },
+    { id: 'step-4', text: 'Menyusun hasil analisis...',     pct: 95  },
+  ];
+
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) {
+      const prev = document.getElementById(steps[i-1].id);
+      prev.textContent = `[✓] ${steps[i-1].text}`;
+      prev.classList.remove('active');
+      prev.classList.add('done');
+    }
+    if (i < steps.length) {
+      const curr = document.getElementById(steps[i].id);
+      curr.textContent = `[>] ${steps[i].text}`;
+      curr.classList.add('active');
+      bar.style.width = glow.style.width = steps[i].pct + '%';
+      i++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 320);
+
+  return interval;
+}
+
+function hideScanAnimation(intervalId) {
+  clearInterval(intervalId);
+  const bar  = document.getElementById('scan-bar');
+  const glow = document.getElementById('scan-glow');
+  bar.style.width = glow.style.width = '100%';
+
+  // Tandai semua step selesai
+  ['step-1','step-2','step-3','step-4'].forEach((id, idx) => {
+    const el = document.getElementById(id);
+    const texts = ['Tokenisasi teks...','Menjalankan model IndoBERT...','Menghitung probabilitas...','Menyusun hasil analisis...'];
+    el.textContent = `[✓] ${texts[idx]}`;
+    el.classList.remove('active');
+    el.classList.add('done');
+  });
+
+  setTimeout(() => {
+    document.getElementById('scan-card').style.display = 'none';
+  }, 500);
+}
+
+async function detect() {
+  const text = input.value.trim();
+  if (!text) { showError('Teks tidak boleh kosong.'); return; }
+  hideError();
+  document.getElementById('warning-box').style.display = 'none';
+  document.getElementById('result-card').style.display = 'none';
+
+  const btn = document.getElementById('detect-btn');
+  btn.disabled = true; btn.classList.add('loading');
+
+  
+  const scanInterval = showScanAnimation();
+
+  try {
+    const res  = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
+    const data = await res.json();
+
+    
+    hideScanAnimation(scanInterval);
+
+    if (!res.ok || data.error) { showError(data.error || 'Terjadi kesalahan.'); return; }
+
+    if (data.low_confidence && data.warning) {
+      const wb = document.getElementById('warning-box');
+      wb.innerHTML = `<span class="err-icon">◈</span> ${data.warning}`;
+      wb.style.display = 'flex';
+    }
+
+    // ✅ Delay sedikit biar transisi lebih smooth
+    setTimeout(() => renderResult(data), 550);
+
+  } catch {
+    hideScanAnimation(scanInterval);
+    showError('Tidak dapat terhubung ke server.');
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+  }
+}
+
+function renderResult(data) {
+  const label = data.prediction;
+  const meta  = getMeta(label);
+  const card  = document.getElementById('result-card');
+
+  card.style.display = 'block';
+  card.style.setProperty('--result-color', meta.color);
+  card.style.borderColor = meta.color + '40';
+
+  document.getElementById('result-icon').textContent  = meta.icon;
+  document.getElementById('result-icon').style.color  = meta.color;
+  document.getElementById('result-badge').textContent = data.low_confidence ? '// UNCERTAIN' : '// DETECTED';
+  document.getElementById('result-badge').style.color = meta.color;
+  document.getElementById('result-label').textContent = label;
+  document.getElementById('result-label').style.color = meta.color;
+  document.getElementById('result-desc').textContent  = meta.desc;
+  document.getElementById('result-model-tag').textContent = `via ${data.model_used || 'AI'}`;
+
+  const pct    = data.confidence || 0;
+  const circ   = 213.6;
+  const offset = circ - (pct / 100) * circ;
+  const ring   = document.getElementById('conf-ring');
+  ring.style.stroke = meta.color;
+  ring.style.strokeDashoffset = circ;
+  setTimeout(() => { ring.style.transition = 'stroke-dashoffset 0.8s ease'; ring.style.strokeDashoffset = offset; }, 50);
+  document.getElementById('result-pct').textContent = pct + '%';
+  document.getElementById('result-pct').style.color = meta.color;
+
+  const container = document.getElementById('prob-bars');
+  container.innerHTML = '';
+  const probs  = data.probabilities || {};
+  const sorted = Object.keys(probs).sort((a,b) => (probs[b]||0)-(probs[a]||0));
+  sorted.forEach(l => {
+    const p   = probs[l] || 0;
+    const m   = getMeta(l);
+    const row = document.createElement('div');
+    row.className = 'prob-row';
+    row.innerHTML = `
+      <span class="prob-name">${l}</span>
+      <div class="prob-track">
+        <div class="prob-fill" style="width:0%;background:${m.color}" data-target="${p}"></div>
+      </div>
+      <span class="prob-pct" style="color:${m.color}">${p}%</span>`;
+    container.appendChild(row);
+  });
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.prob-fill').forEach(el => { el.style.width = el.dataset.target + '%'; });
+  });
+  card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+// ═══════════════════════════════════════════
+//  BULK CSV
+// ═══════════════════════════════════════════
+let selectedFile = null;
+const zone = document.getElementById('upload-zone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.csv')) setFile(f);
+});
+
+function handleFileSelect(inp) { if (inp.files[0]) setFile(inp.files[0]); }
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('upload-text').textContent    = f.name;
+  document.getElementById('upload-sub').textContent     = `${(f.size/1024).toFixed(1)} KB  ·  CSV`;
+  document.getElementById('bulk-file-info').textContent = f.name;
+  document.getElementById('bulk-btn').disabled = false;
+  zone.classList.add('has-file');
+}
+
+async function runBulk() {
+  if (!selectedFile) return;
+  document.getElementById('bulk-error-box').style.display = 'none';
+  document.getElementById('bulk-result').style.display    = 'none';
+
+  const btn = document.getElementById('bulk-btn');
+  btn.disabled = true; btn.classList.add('loading');
+
+  const prog = document.getElementById('bulk-progress');
+  const bar  = document.getElementById('progress-bar');
+  const glow = document.getElementById('progress-glow');
+  const txt  = document.getElementById('progress-text');
+  prog.style.display = 'block';
+  bar.style.width = glow.style.width = '0%';
+
+  let pct = 0;
+  const ticker = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 6, 88);
+    bar.style.width = glow.style.width = pct + '%';
+    if (pct > 20) txt.textContent = 'Membaca file CSV...';
+    if (pct > 45) txt.textContent = 'Memproses teks...';
+    if (pct > 70) txt.textContent = 'Menjalankan model SVM...';
+    if (pct > 84) txt.textContent = 'Menyusun hasil...';
+  }, 350);
+
+  try {
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+    const res  = await fetch('/bulk', { method:'POST', body:fd });
+    const data = await res.json();
+    clearInterval(ticker);
+    bar.style.width = glow.style.width = '100%';
+    txt.textContent = `✓ Selesai — ${data.total} baris diproses`;
+
+    if (!res.ok || data.error) {
+      document.getElementById('bulk-error-box').innerHTML = `<span class="err-icon">⚠</span> ${data.error}`;
+      document.getElementById('bulk-error-box').style.display = 'flex';
+      return;
+    }
+    bulkResults = data.results;
+    setTimeout(() => { prog.style.display = 'none'; renderBulkResult(data); updateDashboard(data); }, 700);
+  } catch {
+    clearInterval(ticker);
+    document.getElementById('bulk-error-box').innerHTML = `<span class="err-icon">⚠</span> Tidak dapat terhubung ke server.`;
+    document.getElementById('bulk-error-box').style.display = 'flex';
+  } finally { btn.disabled = false; btn.classList.remove('loading'); }
+}
+
+function renderBulkResult(data) {
+  const stats = data.stats;
+  const total = data.total;
+  const el    = document.getElementById('bulk-stats');
+  el.innerHTML = '';
+
+  [
+    { label:'Total Teks',  val:total,                     color:'#00ff88' },
+    { label:'Abusive',     val:stats['Abusive']    ||0,   color:'#ef4444' },
+    { label:'Hate Speech', val:stats['Hate Speech']||0,   color:'#f97316' },
+    { label:'Harassment',  val:stats['Harassment'] ||0,   color:'#a78bfa' },
+    { label:'Normal',      val:stats['Normal']     ||0,   color:'#00ff88' },
+  ].forEach(item => {
+    const pct = total && item.label !== 'Total Teks' ? ((item.val/total)*100).toFixed(1)+'%' : '';
+    const d   = document.createElement('div');
+    d.className = 'bstat';
+    d.innerHTML = `
+      <div class="bstat-val" style="color:${item.color}">${item.val}</div>
+      <div class="bstat-lbl">${item.label}</div>
+      ${pct ? `<div class="bstat-pct">${pct}</div>` : ''}`;
+    el.appendChild(d);
+  });
+
+  if (data.truncated) {
+    const note = document.createElement('div');
+    note.className = 'truncate-note';
+    note.textContent = `⚠ File terlalu besar, hanya ${data.max_rows} baris pertama yang diproses.`;
+    el.appendChild(note);
+  }
+
+  const tbody = document.getElementById('bulk-tbody');
+  tbody.innerHTML = '';
+  document.getElementById('table-count').textContent = `${total} entri`;
+  data.results.forEach((r, i) => {
+    const meta = getMeta(r.prediction);
+    const tr   = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="td-num">${i+1}</td>
+      <td class="td-text">${escapeHtml(r.text)}</td>
+      <td><span class="label-chip" style="color:${meta.color};background:${meta.bg}">${meta.icon} ${r.prediction}</span></td>
+      <td class="td-conf" style="color:${meta.color}">${r.confidence}%</td>
+      <td class="td-model">${r.model_used}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('bulk-result').style.display = 'block';
+  document.getElementById('bulk-result').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+async function downloadResult() {
+  if (!bulkResults) return;
+  const res  = await fetch('/bulk/download', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({results:bulkResults}) });
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'hasil_cyberguard.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════
+//  DASHBOARD
+// ═══════════════════════════════════════════
+function updateDashboard(data) {
+  document.getElementById('dashboard-empty').style.display   = 'none';
+  document.getElementById('dashboard-content').style.display = 'block';
+
+  const stats     = data.stats;
+  const total     = data.total;
+  const danger    = (stats['Abusive']||0)+(stats['Hate Speech']||0)+(stats['Harassment']||0);
+  const safe      = stats['Normal']||0;
+  const dangerPct = total ? ((danger/total)*100).toFixed(1) : 0;
+
+  const grid = document.getElementById('stat-grid');
+  grid.innerHTML = '';
+  [
+    { icon:'◈', label:'Total Teks',  val:total,         color:'#00ff88' },
+    { icon:'⚡', label:'Berbahaya',  val:danger,        color:'#ef4444' },
+    { icon:'✓',  label:'Aman',       val:safe,          color:'#00ff88' },
+    { icon:'☢',  label:'% Berbahaya',val:dangerPct+'%', color:'#f97316' },
+  ].forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'stat-card';
+    d.innerHTML = `
+      <div class="stat-icon" style="color:${item.color}">${item.icon}</div>
+      <div class="stat-val"  style="color:${item.color}">${item.val}</div>
+      <div class="stat-lbl">${item.label}</div>`;
+    grid.appendChild(d);
+  });
+
+  const labelOrder = ['Abusive','Normal','Hate Speech','Harassment'];
+  const colors     = ['#ef4444','#00ff88','#f97316','#a78bfa'];
+  const vals       = labelOrder.map(l => stats[l]||0);
+  const chartOpts  = {
+    plugins: { legend: { display:false } },
+    scales: {
+      x: { ticks:{ color:'#4a4a6a', font:{size:11} }, grid:{ color:'rgba(0,255,136,0.05)' } },
+      y: { ticks:{ color:'#4a4a6a', font:{size:11} }, grid:{ color:'rgba(0,255,136,0.05)' } }
+    }
+  };
+
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('chart-donut'), {
+    type: 'doughnut',
+    data: { labels:labelOrder, datasets:[{ data:vals, backgroundColor:colors, borderWidth:0, hoverOffset:8 }] },
+    options: { cutout:'70%', plugins:{ legend:{ position:'bottom', labels:{ color:'#6b6b8a', font:{size:11}, padding:14 } } } }
+  });
+
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('chart-bar'), {
+    type: 'bar',
+    data: { labels:labelOrder, datasets:[{ data:vals, backgroundColor:colors, borderRadius:4, borderSkipped:false }] },
+    options: chartOpts
+  });
+
+  const buckets = {'0–50':0,'50–65':0,'65–80':0,'80–90':0,'90–100':0};
+  data.results.forEach(r => {
+    const c = r.confidence;
+    if (c < 50) buckets['0–50']++;
+    else if (c < 65) buckets['50–65']++;
+    else if (c < 80) buckets['65–80']++;
+    else if (c < 90) buckets['80–90']++;
+    else buckets['90–100']++;
+  });
+
+  if (confChart) confChart.destroy();
+  confChart = new Chart(document.getElementById('chart-conf'), {
+    type: 'bar',
+    data: { labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:'rgba(0,255,136,0.6)', borderRadius:4, borderSkipped:false }] },
+    options: chartOpts
+  });
+}
+</script>
+</body>
+</html>
